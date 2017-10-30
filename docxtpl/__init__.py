@@ -102,11 +102,52 @@ class DocxTemplate(object):
 
         return src_xml
 
+    def render_markdown(self, d):
+        def render_list(match):
+            s = '</w:t></w:r></w:p>'
+            s += re.sub(r'\* (.+?)\n',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p>',match.group(0))
+            s += '<w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>'
+
+            return s
+
+
+        for k,v in d.iteritems():
+            if isinstance(v, dict):
+                self.render_markdown(v)
+            elif isinstance(v, list):
+                for i,val in enumerate(v):
+                    if isinstance(val, str):
+                        d[k][i] = re.sub(r'[^*]\*([^*]+)\*[^*]', r'<w:b>\1</w:b>', val)
+                    else:
+                        self.render_markdown(val)
+            else:
+                styles = {'singleline':{
+                            r'(\*\*|__)(.+?)\1':r'</w:t></w:r><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:b w:val="0"/><w:bCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
+                            r'(\*|_)(.*?)\1':r'</w:t></w:r><w:r><w:rPr><w:i/><w:iCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:i w:val="0"/><w:iCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
+                            r'`(.*?)`':r'</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t>\1</w:t></w:r><w:r><w:rPr><w:rStyle w:val="3"/></w:rPr><w:t xml:space="preserve">',
+                         },
+                         'multiline':{
+                            r'```(.+?)```':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ConsoleText"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>',
+                         },
+                }
+                for s,x in sorted(styles['multiline'].items()):
+                    v = re.sub(s, x, v, flags=re.DOTALL)
+                for s,x in sorted(styles['singleline'].items()):
+                    v = re.sub(s, x, v)
+
+                # Lists
+                v = re.sub('((?:\* .+?\n)+)', render_list, v)
+
+                d[k] = v
+
+        return d
+    
     def render_xml(self,src_xml,context,jinja_env=None):
         if jinja_env:
             template = jinja_env.from_string(src_xml)
         else:
             template = Template(src_xml)
+        context = self.render_markdown(context)
         dst_xml = template.render(context)
         dst_xml = dst_xml.replace('{_{','{{').replace('}_}','}}').replace('{_%','{%').replace('%_}','%}')
         return dst_xml
