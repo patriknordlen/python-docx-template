@@ -471,7 +471,7 @@ class Markdown(str):
 
         return txt
     
-    class Listing(object):
+class Listing(object):
     r"""class to manage \n and \a without to use RichText, by this way you keep the current template styling
 
     use {{ mylisting }} in your template and context={ mylisting:Listing(the_listing_with_newlines) }
