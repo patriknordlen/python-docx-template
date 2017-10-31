@@ -101,46 +101,6 @@ class DocxTemplate(object):
         src_xml = re.sub(r'(?<=\{[\{%])(.*?)(?=[\}%]})',clean_tags,src_xml)
 
         return src_xml
-
-    def render_markdown(self, d):
-        def render_list(match):
-            s = '</w:t></w:r></w:p>'
-            s += re.sub(r'\* (.+?)\n',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p>',match.group(0))
-            s += '<w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>'
-
-            return s
-
-
-        for k,v in d.iteritems():
-            if isinstance(v, dict):
-                self.render_markdown(v)
-            elif isinstance(v, list):
-                for i,val in enumerate(v):
-                    if isinstance(val, str):
-                        d[k][i] = re.sub(r'[^*]\*([^*]+)\*[^*]', r'<w:b>\1</w:b>', val)
-                    else:
-                        self.render_markdown(val)
-            else:
-                styles = {'singleline':{
-                            r'(\*\*|__)(.+?)\1':r'</w:t></w:r><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:b w:val="0"/><w:bCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
-                            r'(\*|_)(.*?)\1':r'</w:t></w:r><w:r><w:rPr><w:i/><w:iCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:i w:val="0"/><w:iCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
-                            r'`(.*?)`':r'</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t>\1</w:t></w:r><w:r><w:rPr><w:rStyle w:val="3"/></w:rPr><w:t xml:space="preserve">',
-                         },
-                         'multiline':{
-                            r'```(.+?)```':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ConsoleText"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>',
-                         },
-                }
-                for s,x in sorted(styles['multiline'].items()):
-                    v = re.sub(s, x, v, flags=re.DOTALL)
-                for s,x in sorted(styles['singleline'].items()):
-                    v = re.sub(s, x, v)
-
-                # Lists
-                v = re.sub('((?:\* .+?\n)+)', render_list, v)
-
-                d[k] = v
-
-        return d
     
     def render_xml(self,src_xml,context,jinja_env=None):
         if jinja_env:
@@ -415,7 +375,7 @@ class RichText(object):
 
     This is much faster than using Subdoc class, but this only for texts INSIDE an existing paragraph.
     """
-    def __init__(self, text=None, **text_prop):
+    def __init__(self, text=None, safe=False, **text_prop):
         self.xml = ''
         if text:
             self.add(text, **text_prop)
@@ -432,7 +392,9 @@ class RichText(object):
 
         if not isinstance(text, six.text_type):
             text = text.decode('utf-8',errors='ignore')
-        text = escape(text).replace('\n',NEWLINE).replace('\a',NEWPARAGRAPH)
+        if not self.safe:
+            text = escape(text)
+        text = text.replace('\n',NEWLINE).replace('\a',NEWPARAGRAPH)
 
         prop = u''
 
@@ -473,7 +435,44 @@ class RichText(object):
 
 R = RichText
 
-class Listing(object):
+class Markdown(str):
+    def __init__(self, text):
+        self.xml = str(RichText(self.render_markdown(str(text)), safe=True))
+
+    def __unicode__(self):
+        return self.xml
+
+    def __str__(self):
+        return self.xml
+
+    def render_list(self, match):
+        s = '</w:t></w:r></w:p>'
+        s += re.sub(r'\* (.+?)(?:\n|$)',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p>',match.group(0))
+        s += '<w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>'
+
+        return s
+
+    def render_markdown(self, txt):
+        styles = {'singleline':{
+                    r'(\*\*|__)(.+?)\1':r'</w:t></w:r><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:b w:val="0"/><w:bCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
+                    r'(\*|_)(.*?)\1':r'</w:t></w:r><w:r><w:rPr><w:i/><w:iCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:i w:val="0"/><w:iCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
+                    r'`(.*?)`':r'</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t>\1</w:t></w:r><w:r><w:rPr><w:rStyle w:val="3"/></w:rPr><w:t xml:space="preserve">',
+                    },
+                    'multiline':{
+                    r'```(.+?)```':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ConsoleText"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>',
+                    },
+        }
+        # Lists
+        txt = re.sub('((?:\* .+?\n|\* .+?$)+)', self.render_list, txt)
+
+        for s,x in sorted(styles['multiline'].items()):
+            txt = re.sub(s, x, txt, flags=re.DOTALL)
+        for s,x in sorted(styles['singleline'].items()):
+            txt = re.sub(s, x, txt)
+
+        return txt
+    
+    class Listing(object):
     r"""class to manage \n and \a without to use RichText, by this way you keep the current template styling
 
     use {{ mylisting }} in your template and context={ mylisting:Listing(the_listing_with_newlines) }
