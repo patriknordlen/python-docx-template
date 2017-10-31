@@ -107,7 +107,6 @@ class DocxTemplate(object):
             template = jinja_env.from_string(src_xml)
         else:
             template = Template(src_xml)
-        context = self.render_markdown(context)
         dst_xml = template.render(context)
         dst_xml = dst_xml.replace('{_{','{{').replace('}_}','}}').replace('{_%','{%').replace('%_}','%}')
         return dst_xml
