@@ -376,6 +376,7 @@ class RichText(object):
     """
     def __init__(self, text=None, safe=False, **text_prop):
         self.xml = ''
+        self.safe = safe
         if text:
             self.add(text, **text_prop)
 
@@ -436,7 +437,7 @@ R = RichText
 
 class Markdown(str):
     def __init__(self, text):
-        self.xml = str(RichText(self.render_markdown(str(text)), safe=True))
+        self.xml = str(RichText(self.render_markdown(escape(str(text))), safe=True))
 
     def __unicode__(self):
         return self.xml
