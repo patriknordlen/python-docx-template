@@ -446,12 +446,9 @@ class Markdown(str):
         return self.xml
 
     def render_list(self, match):
-        print "List before: %s\n\n" % match.group(0)
         s = '</w:t></w:r></w:p>'
-        s += re.sub(r'\* (.+?)(?:\n|$)',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p>',match.group(0))
+        s += re.sub(r'\* (.+?)(?:\r?\n|$)',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p>',match.group(0))
         s += '<w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>'
-
-        print "List after: %s\n\n" % s
 
         return s
 
