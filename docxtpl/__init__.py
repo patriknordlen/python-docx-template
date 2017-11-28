@@ -391,7 +391,7 @@ class RichText(object):
 
 
         if not isinstance(text, six.text_type):
-            text = text.decode('utf-8',errors='ignore')
+          text = text.decode('utf-8',errors='ignore')
         if not self.safe:
             text = escape(text)
         text = text.replace('\r\n',NEWLINE).replace('\n',NEWLINE).replace('\a',NEWPARAGRAPH)
@@ -435,9 +435,12 @@ class RichText(object):
 
 R = RichText
 
-class Markdown(str):
+class Markdown():
     def __init__(self, text):
-        self.xml = str(RichText(self.render_markdown(escape(str(text))), safe=True))
+	if text is not None:
+          self.xml = RichText(self.render_markdown(escape(text)), safe=True).xml
+	else:
+	  self.xml = ''
 
     def __unicode__(self):
         return self.xml
