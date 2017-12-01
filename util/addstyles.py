@@ -12,7 +12,7 @@ def main(args):
         print "Usage: %s <file to patch> <stylefile>" % args[0]
         return
 
-    docfile = args[1]
+    docxfile = args[1]
     tmpdir = mkdtemp()
 
     try:
@@ -37,7 +37,7 @@ def main(args):
         docxstyles = re.sub(r'(</w:styles>)',r'%s\1' % customstyles, docxstyles)
         docxstylefile.write(docxstyles)
 
-    outfile = "%s_patched%s" % os.path.splitext(docfile)
+    outfile = "%s_patched%s" % os.path.splitext(docxfile)
     z = zipfile.ZipFile(outfile, "w", compression=zipfile.ZIP_DEFLATED)
     os.chdir(tmpdir)
     for dirname, subdirs, files in os.walk('.'):
