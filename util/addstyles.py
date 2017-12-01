@@ -47,6 +47,6 @@ def main(args):
     z.close()
 
     shutil.rmtree(tmpdir)
-    print "All patched up and done!"
+    print "All patched up and done! Resulting file is %s" % outfile
 
 main(sys.argv)
