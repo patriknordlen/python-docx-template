@@ -14,6 +14,7 @@ import docx.oxml.ns
 from docx.opc.constants import RELATIONSHIP_TYPE as REL_TYPE
 from jinja2 import Template
 from cgi import escape
+from uuid import uuid4
 import re
 import six
 import binascii
@@ -455,26 +456,50 @@ class Markdown():
 
         return s
 
+    def save_codeblocks(self, txt):
+        codeblocks = {}
+        for match in re.findall(r'(```\r?\n.+?\r?\n```)', txt, flags=re.DOTALL|re.MULTILINE):
+	    rendered_str = re.sub(r'```\r?\n(.+?)\r?\n```',r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ConsoleText"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t>', match, flags=re.DOTALL|re.MULTILINE)
+	    u = str(uuid4())
+	    codeblocks[u] = rendered_str
+	    txt = txt.replace(match, u)
+
+        for match in re.findall(r'(`.+?`)', txt):
+	    rendered_str = re.sub(r'`(.+?)`',r'</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t>\1</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t xml:space="preserve">', match)
+	    u = str(uuid4())
+	    codeblocks[u] = rendered_str
+	    txt = txt.replace(match, u)
+
+	return (codeblocks, txt)
+
     def render_markdown(self, txt):
+	(codeblocks, txt) = self.save_codeblocks(txt)
+
         styles = {'singleline':{
                     r'(\*\*|__)(.+?)\1':r'</w:t></w:r><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:b w:val="0"/><w:bCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
                     r'(\*|_)(.*?)\1':r'</w:t></w:r><w:r><w:rPr><w:i/><w:iCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:i w:val="0"/><w:iCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
-                    r'`(.*?)`':r'</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t>\1</w:t></w:r><w:r><w:rPr><w:rStyle w:val="3"/></w:rPr><w:t xml:space="preserve">',
                     },
                     'multiline':{
-                    r'```(.+?)```':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ConsoleText"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>',
+                    r'\r?\n#\s+(.+?)\r?\n':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
+                    r'\r?\n##\s+(.+?)\r?\n':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
+                    r'\r?\n###\s+(.+?)\r?\n':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
+                    r'\r?\n###\s+(.+?)\r?\n':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading4"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
                     },
         }
         # Lists
         txt = re.sub('((?:\* .+?\n|\* .+?$|- .+?\n|- .+?$)+)', self.render_list, txt)
 
         for s,x in sorted(styles['multiline'].items()):
-            txt = re.sub(s, x, txt, flags=re.DOTALL)
+            txt = re.sub(s, x, txt, flags=re.DOTALL|re.MULTILINE)
+
         for s,x in sorted(styles['singleline'].items()):
             txt = re.sub(s, x, txt)
 
+	for k,v in codeblocks.iteritems():
+	    txt = txt.replace(k,v)
+
         return txt
-    
+
 class Listing(object):
     r"""class to manage \n and \a without to use RichText, by this way you keep the current template styling
 
