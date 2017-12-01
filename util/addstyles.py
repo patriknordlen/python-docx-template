@@ -35,6 +35,7 @@ def main(args):
             raise Exception("File has already been patched with custom styles!")
 
         docxstyles = re.sub(r'(</w:styles>)',r'%s\1' % customstyles, docxstyles)
+        docxstylefile.seek(0)
         docxstylefile.write(docxstyles)
 
     outfile = "%s_patched%s" % os.path.splitext(docxfile)
