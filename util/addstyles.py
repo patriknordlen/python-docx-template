@@ -16,23 +16,23 @@ def main(args):
     tmpdir = mkdtemp()
 
     try:
-        z = zipfile.ZipFile(docfile)
+        z = zipfile.ZipFile(docxfile)
         z.extractall(tmpdir)
         z.close()
     except:
-        raise "ERROR: this doesn't look like a valid docx file!"
+        raise Exception("ERROR: this doesn't look like a valid docx file!")
 
     customstylefile = args[2]
     try:
         with open(customstylefile) as stylefile:
             customstyles = stylefile.read().rstrip()
     except:
-        raise "ERROR: couldn't read style file %s" % args[2]
+        raise Exception("ERROR: couldn't read style file %s" % args[2])
 
     with open("%s/word/styles.xml" % tmpdir,"r+") as docxstylefile:
         docxstyles = docxstylefile.read()
         if re.search('styleId="Heading1"', docxstyles):
-            raise "File has already been patched with custom styles!"
+            raise Exception("File has already been patched with custom styles!")
 
         docxstyles = re.sub(r'(</w:styles>)',r'%s\1' % customstyles, docxstyles)
         docxstylefile.write(docxstyles)
