@@ -465,7 +465,7 @@ class Markdown():
 	    txt = txt.replace(match, u)
 
         for match in re.findall(r'(`.+?`)', txt):
-	    rendered_str = re.sub(r'`(.+?)`',r'</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t>\1</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t xml:space="preserve">', match)
+	    rendered_str = re.sub(r'`(.+?)`',r'</w:t></w:r><w:r><w:rPr><w:rStyle w:val="ConsoleTextChar"/></w:rPr><w:t>\1</w:t></w:r><w:r><w:rPr><w:rStyle w:val="BodyText"/></w:rPr><w:t xml:space="preserve">', match)
 	    u = str(uuid4())
 	    codeblocks[u] = rendered_str
 	    txt = txt.replace(match, u)
