@@ -20,7 +20,7 @@ def main(args):
 
     args = argparser.parse_args()
 
-    if args.outfile is None and args.replace is None:
+    if args.outfile is None and args.replace is False:
         argparser.print_usage()
         sys.exit(0)
 

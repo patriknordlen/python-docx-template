@@ -451,15 +451,15 @@ class Markdown():
 
     def render_list(self, match):
         s = '</w:t></w:r></w:p>'
-        s += re.sub(r'(?:\*|-) (.+?)(?:\r?\n|$)',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p>',match.group(0))
-        s += '<w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t>'
+        s += re.sub(r'(?:\*|-) (.+?)(?:\r?\n|$)',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t xml:space="preserve">\1</w:t></w:r></w:p>',match.group(0))
+        s += '<w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t xml:space="preserve">'
 
         return s
 
     def save_codeblocks(self, txt):
         codeblocks = {}
         for match in re.findall(r'(```\r?\n.+?\r?\n```)', txt, flags=re.DOTALL|re.MULTILINE):
-	    rendered_str = re.sub(r'```\r?\n(.+?)\r?\n```',r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ConsoleText"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t>', match, flags=re.DOTALL|re.MULTILINE)
+	    rendered_str = re.sub(r'```\r?\n(.+?)\r?\n```',r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ConsoleText"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">', match, flags=re.DOTALL|re.MULTILINE)
 	    u = str(uuid4())
 	    codeblocks[u] = rendered_str
 	    txt = txt.replace(match, u)
@@ -487,7 +487,8 @@ class Markdown():
                     },
         }
         # Lists
-        txt = re.sub('((?:\* .+?\n|\* .+?$|- .+?\n|- .+?$)+)', self.render_list, txt)
+	print txt
+        txt = re.sub('^((?:\* .+?\n|\* .+?$|- .+?\n|- .+?$)+)', self.render_list, txt, flags=re.MULTILINE)
 
         for s,x in sorted(styles['multiline'].items()):
             txt = re.sub(s, x, txt, flags=re.DOTALL|re.MULTILINE)
