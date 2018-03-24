@@ -450,8 +450,9 @@ class Markdown():
         return self.xml
 
     def render_list(self, match):
+	m = re.sub(r'(^(?:\r?\n)+|(?:\r?\n)+$)','', match.group(0))
         s = '</w:t></w:r></w:p>'
-        s += re.sub(r'(?:\*|-) (.+?)(?:\r?\n|$)',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t xml:space="preserve">\1</w:t></w:r></w:p>',match.group(0))
+        s += re.sub(r'(?:\*|-) (.+?)(?:\r?\n|$)',r'<w:p><w:pPr><w:pStyle w:val="3"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:tabs><w:tab w:val="left" w:pos="420"/></w:tabs><w:ind w:left="2100" w:leftChars="0" w:hanging="420" w:firstLineChars="0"/></w:pPr><w:r><w:t xml:space="preserve">\1</w:t></w:r></w:p>',m)
         s += '<w:p><w:pPr><w:pStyle w:val="3"/></w:pPr><w:r><w:t xml:space="preserve">'
 
         return s
@@ -480,15 +481,14 @@ class Markdown():
                     r'(\*|_)(.*?)\1':r'</w:t></w:r><w:r><w:rPr><w:i/><w:iCs/></w:rPr><w:t>\2</w:t></w:r><w:r><w:rPr><w:i w:val="0"/><w:iCs w:val="0"/></w:rPr><w:t xml:space="preserve">',
                     },
                     'multiline':{
-                    r'\r?\n#\s+(.+?)\r?\n':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
-                    r'\r?\n##\s+(.+?)\r?\n':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
-                    r'\r?\n###\s+(.+?)\r?\n':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
-                    r'\r?\n###\s+(.+?)\r?\n':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading4"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
+                    r'(?:\r?\n)*#\s+(.+?)(?:\r?\n)+':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
+                    r'(?:\r?\n)*##\s+(.+?)(?:\r?\n)+':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
+                    r'(?:\r?\n)*###\s+(.+?)(?:\r?\n)+':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
+                    r'(?:\r?\n)*###\s+(.+?)(?:\r?\n)+':r'</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading4"/></w:pPr><w:r><w:t>\1</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="BodyText"/></w:pPr><w:r><w:t xml:space="preserve">',
                     },
         }
         # Lists
-	print txt
-        txt = re.sub('^((?:\* .+?\n|\* .+?$|- .+?\n|- .+?$)+)', self.render_list, txt, flags=re.MULTILINE)
+        txt = re.sub('(?:\r?\n)+((?:\* .+?\n|\* .+?$|- .+?\n|- .+?$)+)(?:\r?\n)*', self.render_list, txt, flags=re.MULTILINE)
 
         for s,x in sorted(styles['multiline'].items()):
             txt = re.sub(s, x, txt, flags=re.DOTALL|re.MULTILINE)
